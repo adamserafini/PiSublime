@@ -9,8 +9,8 @@
                 "children":
                 [
                     {
-                        "caption": "Hello World",
-                        "command": "pi"
+                        "caption": "Ask",
+                        "command": "pi_ask"
                     }
                 ]
             }

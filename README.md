@@ -12,6 +12,6 @@ ln -s "$(pwd)" ~/Library/Application\ Support/Sublime\ Text/Packages/PiSublime
 ```
 
 ## Included Features
-- `pi.py`: A sample text command.
-- `Default.sublime-commands`: Registers the command in the Command Palette.
+- `pi.py`: Contains the `Pi: Ask` command.
+- `Context.sublime-menu`: Adds the command to the right-click menu.
 - `Main.sublime-menu`: Adds the command to the Tools > Pi menu.
