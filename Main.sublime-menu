@@ -1,0 +1,19 @@
+[
+    {
+        "id": "tools",
+        "children":
+        [
+            {
+                "caption": "Pi",
+                "id": "pi",
+                "children":
+                [
+                    {
+                        "caption": "Hello World",
+                        "command": "pi"
+                    }
+                ]
+            }
+        ]
+    }
+]

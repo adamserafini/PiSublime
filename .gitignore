@@ -1,0 +1,12 @@
+# Environments
+.venv
+
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+
+# IDE / OS
+.DS_Store
+
+# Sublime specific ignores
+*.sublime-workspace
