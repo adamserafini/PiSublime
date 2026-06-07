@@ -1,29 +1,29 @@
 # PiSublime
 
-A Sublime Text 4 plugin.
+A Sublime Text 4 plugin to instantly send code selections and prompts directly to your active Pi terminal session.
 
-## Sublime Text 4 Installation
+## Installation
 
-To load this plugin into Sublime Text 4, you can symlink this repository to your Sublime Text `Packages` directory:
+To install and enable this plugin, you need to complete two quick steps:
+
+### Step 1: Install the Sublime Text 4 Plugin
+Symlink this repository to your Sublime Text `Packages` directory:
 
 **macOS:**
 ```bash
 ln -s "$(pwd)" ~/Library/Application\ Support/Sublime\ Text/Packages/PiSublime
 ```
 
-## Included Features
-- `pi.py`: Contains the `Pi: Ask` command.
-- `Context.sublime-menu`: Adds the command to the right-click menu.
-- `Main.sublime-menu`: Adds the command to the Tools > Pi menu.
-
-## Background Pi Session Integration (Optional)
-
-This plugin includes an integration that instantly injects your typed questions directly into an active Pi terminal session.
-
-To enable this globally across all your projects, run this command from the root of this repository to create the extensions folder and create the symlink:
+### Step 2: Install the Pi Extension (Required)
+To allow Sublime Text to instantly inject your typed prompts directly into your active Pi terminal session, run this command from the root of this repository to create your global Pi extensions folder and symlink the integration extension:
 
 ```bash
 mkdir -p ~/.pi/agent/extensions && ln -sf "$(pwd)/.pi/extensions/sublime.ts" ~/.pi/agent/extensions/sublime.ts
 ```
 
-Now, whenever you run `pi` in your terminal, the extension will automatically load in the background. Any questions you submit from Sublime Text will immediately run in your active terminal!
+Now, whenever you run `pi` in your terminal, the extension will automatically load in the background, and any prompts you submit from Sublime Text will instantly execute in your active terminal!
+
+## Included Features
+- `pi.py`: Contains the `Pi: Ask` command.
+- `Context.sublime-menu`: Adds the command to the right-click menu.
+- `Main.sublime-menu`: Adds the command to the Tools > Pi menu.
