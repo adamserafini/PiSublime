@@ -27,9 +27,9 @@ To enable this globally across all your projects:
    mkdir -p ~/.pi/agent/extensions
    ```
 
-2. Copy the included Sublime integration extension to your global folder:
+2. Symlink the included Sublime integration extension to your global folder (run this from the root of this repository):
    ```bash
-   cp .pi/extensions/sublime.ts ~/.pi/agent/extensions/sublime.ts
+   ln -s "$(pwd)/.pi/extensions/sublime.ts" ~/.pi/agent/extensions/sublime.ts
    ```
 
 Now, whenever you run `pi` in your terminal, the extension will automatically load in the background. Any questions you submit from Sublime Text will immediately run in your active terminal!
