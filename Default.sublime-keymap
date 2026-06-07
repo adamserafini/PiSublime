@@ -1,0 +1,31 @@
+[
+    {
+        "keys": ["enter"],
+        "command": "pi_submit_ask",
+        "context": [
+            { "key": "setting.pi_ask_panel", "operator": "equal", "operand": true }
+        ]
+    },
+    {
+        "keys": ["shift+enter"],
+        "command": "insert",
+        "args": {"characters": "\n"},
+        "context": [
+            { "key": "setting.pi_ask_panel", "operator": "equal", "operand": true }
+        ]
+    },
+    {
+        "keys": ["ctrl+enter"],
+        "command": "pi_submit_ask",
+        "context": [
+            { "key": "setting.pi_ask_panel", "operator": "equal", "operand": true }
+        ]
+    },
+    {
+        "keys": ["escape"],
+        "command": "pi_cancel_ask",
+        "context": [
+            { "key": "setting.pi_ask_panel", "operator": "equal", "operand": true }
+        ]
+    }
+]

@@ -10,3 +10,4 @@ __pycache__/
 
 # Sublime specific ignores
 *.sublime-workspace
+.sublime/
