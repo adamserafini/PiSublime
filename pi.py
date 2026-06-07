@@ -97,7 +97,7 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
             
             # Format with embedded code block
             parts = [
-                f"Regarding {reference}:",
+                f"Context: {reference}:",
                 f"```{syntax}",
                 selected_text,
                 "```"
