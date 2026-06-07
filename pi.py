@@ -4,7 +4,7 @@ import sublime_plugin
 
 class PiAskCommand(sublime_plugin.TextCommand):
     """
-    Opens a multi-line input panel at the bottom of the screen to submit a question to Pi.
+    Opens a multi-line input panel at the bottom of the screen to submit a prompt to Pi.
     """
     def run(self, edit):
         file_name = self.view.file_name()
@@ -61,7 +61,7 @@ class PiAskCommand(sublime_plugin.TextCommand):
         # Show the panel
         window.run_command("show_panel", {"panel": "output.pi_ask_panel"})
         window.focus_view(panel)
-        sublime.status_message("Pi: Type your question. Press Enter to submit, Shift+Enter for new line, Esc to cancel.")
+        sublime.status_message("Pi: Type your prompt. Press Enter to submit, Shift+Enter for new line, Esc to cancel.")
 
     def is_visible(self):
         # Only show in the context menu if there is a real file behind the view
@@ -97,7 +97,7 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
             
             # Format with embedded code block
             parts = [
-                f"Question about {reference}:",
+                f"Regarding {reference}:",
                 f"```{syntax}",
                 selected_text,
                 "```"
@@ -122,9 +122,9 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
             trigger_file = os.path.join(pi_dir, "sublime-ask.txt")
             with open(trigger_file, "w", encoding="utf-8") as f:
                 f.write(result)
-            sublime.status_message("Pi: Sent question to running session.")
+            sublime.status_message("Pi: Sent prompt to running session.")
         except Exception as e:
-            sublime.status_message("Pi: Error sending question to session.")
+            sublime.status_message("Pi: Error sending prompt to session.")
 
         window = self.view.window()
         if window:

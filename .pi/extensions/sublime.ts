@@ -34,7 +34,7 @@ export default function (pi: ExtensionAPI) {
           } else {
             pi.sendUserMessage(content, { deliverAs: "steer" });
             if (ctx.hasUI) {
-              ctx.ui.notify("Sublime question queued as steering", "info");
+              ctx.ui.notify("Sublime prompt queued as steering", "info");
             }
           }
         }
