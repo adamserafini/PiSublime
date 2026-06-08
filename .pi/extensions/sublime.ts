@@ -81,10 +81,17 @@ export default function (pi: ExtensionAPI) {
       touchSessionFile();
     });
 
-    // Also update last activity when agent starts a turn
-    pi.on("agent_start", async () => {
-      touchSessionFile();
-    });
+    // Update last activity on key session events
+    const activityEvents: Array<any> = [
+      "agent_start",
+      "agent_end",
+      "turn_start",
+      "turn_end",
+      "message_start",
+    ];
+    for (const eventName of activityEvents) {
+      pi.on(eventName, touchSessionFile);
+    }
 
     const cleanup = () => {
       try {
