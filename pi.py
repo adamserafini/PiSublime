@@ -54,7 +54,6 @@ def get_active_sessions():
         try:
             with open(f_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            pid = data.get("pid")
             cwd = data.get("cwd")
             socket_path = data.get("socketPath")
             last_activity = data.get("lastActivity", 0)
@@ -81,7 +80,6 @@ def get_active_sessions():
         if is_active:
             active_sessions.append({
                 "uuid": uuid,
-                "pid": pid,
                 "cwd": cwd,
                 "socket_path": socket_path,
                 "last_activity": last_activity

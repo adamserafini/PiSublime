@@ -28,7 +28,6 @@ export default function (pi: ExtensionAPI) {
           sessionFile,
           JSON.stringify({
             uuid,
-            pid: process.pid,
             cwd: process.cwd(),
             socketPath,
             lastActivity: Date.now(),
