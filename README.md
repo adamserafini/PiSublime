@@ -4,7 +4,7 @@ A Sublime Text 4 plugin to send code selections and prompts directly to your act
 
 ## Installation
 
-Clone this repository onto your computer. This plugin is currently tested only on **macOS**. It might work on Linux or Windows if the installation paths below were adjusted.
+Clone this repository onto your computer. This plugin is currently tested only on **macOS** and only **manually**. It might work on Linux or Windows if the installation paths below were adjusted.
 
 ### Step 1: Install the Sublime Text 4 Plugin
 
@@ -28,11 +28,35 @@ If there is no running `Pi` session, user will be informed.
 
 Otherwise, prompts you submit from Sublime Text will execute in a single `Pi` session using the following prioritisation:
 
-1. **Global Fallback:** If there is exactly **one** active `Pi` session running on your system, it will be used.
+1. **Single Session Default:** If there is exactly **one** active `Pi` session running on your system, it will be used regardless of directory matching.
 2. **Directory Match:** If multiple sessions are running but only **one** matches the current file's folder (or any of its ancestor folders), that matching session will be used.
-3. **Recency Tie-Breaker:** If multiple sessions match the file's directory tree, the session that **most recently** received a user or assistant message will be used.
+3. **Directory Recency Tie-Breaker:** If multiple sessions match the file's directory tree, the session that is **most recently active** (either via user/assistant messages or session startup) will be used.
+4. **Global Recency Fallback:** If multiple sessions are running but **none** match the current file's directory tree, the session that is **most recently active** globally will be used.
 
 ## Included Features
 - `pi.py`: Contains the `Pi: Ask` command. Prompt Pi about selected text.
 - `Context.sublime-menu`: Adds the command to the right-click menu.
 - `Main.sublime-menu`: Adds the command to the Tools > Pi menu.
+
+## How It Works
+
+This integration is built on a high-performance, completely serverless, Unix-native architecture using **Unix Domain Sockets (UDS)**:
+
+1. **Session Registration**:
+   When you start a `Pi` terminal session, the Sublime extension generates a unique **UUID** and starts a local socket server. It writes two lightweight files to your `~/.pi/` directory:
+   - `sublime-session-${uuid}.json`: Stores metadata including the session's Process ID (PID), working directory (`cwd`), the socket path, and the last-active timestamp.
+   - `sublime-session-${uuid}.sock`: The Unix Domain Socket file, managed in-memory by the OS kernel.
+
+2. **Liveness Verification & Crash Cleanup**:
+   When you submit a prompt in Sublime, the plugin scans for `sublime-session-*.json` files. It attempts a socket connection to each to check liveness.
+   - If a connection is refused, Sublime knows instantly that the process has exited or crashed, and automatically purges the stale `.json` and `.sock` files from disk.
+   - If no sessions are alive, Sublime displays an error dialog and preserves your typed prompt in the panel.
+
+3. **Prioritisation & Folder Matching**:
+   If multiple terminal sessions are active, Sublime evaluates which one to send your prompt to by looking up the current file's folder tree:
+   - If there is only one session active globally, it is used.
+   - If only one session's working directory (`cwd`) matches the current file's folder (or any parent/ancestor folders), it is used.
+   - If multiple sessions match the file's folder tree, or if zero sessions match, it falls back to the session that was **most recently active** (updated on each prompt/agent turn).
+
+4. **Synchronous Handshake Delivery**:
+   Once targeted, Sublime writes your selection and prompt directly into the socket and receives an `"OK"` handshake. The Pi extension feeds the message straight into the terminal, executing it instantly.
