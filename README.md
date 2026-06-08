@@ -43,6 +43,6 @@ Otherwise, prompts you submit from Sublime Text will execute in a single `Pi` se
 
 The `Pi` extension starts a Unix Domain Socket server at `~/.pi/sublime-session-${uuid}.sock` for each terminal session and registers its workspace path (`cwd`) and activity time in a matching JSON file. When an agent starts responding to a prompt, the activity time is updated in this JSON file.
 
-When the Sublime plugin is asked to submit a prompt, it verifies active sessions by connecting to their sockets. Stale/crashed session files are deleted. The Sublime plugin selects the best matching session and writes the prompt to its socket. The `Pi` extension reads from the socket and injects the prompt as a user message.
+Before submitting a prompt, the Sublime plugin verifies active sessions by connecting to their sockets. Stale/crashed session files are deleted. The Sublime plugin selects the best matching session and writes the prompt to its socket. The `Pi` extension reads from the socket and injects the prompt as a user message.
 
-On exit, the `Pi` extension cleans up the socket and files.
+On exit, the `Pi` extension cleans up the socket and file.
