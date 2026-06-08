@@ -4,7 +4,7 @@ A Sublime Text 4 plugin to send code selections and prompts directly to your act
 
 ## Installation
 
-Clone this repository onto your computer. This is currently tested only on **macOS**. It might work on Linux or Windows if the installation paths below were adjusted.
+Clone this repository onto your computer. This plugin is currently tested only on **macOS**. It might work on Linux or Windows if the installation paths below were adjusted.
 
 ### Step 1: Install the Sublime Text 4 Plugin
 
