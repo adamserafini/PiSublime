@@ -1,6 +1,50 @@
+import glob
 import os
+import socket
 import sublime
 import sublime_plugin
+
+def get_active_sessions():
+    """
+    Returns a list of active Pi session Unix socket paths (sorted by most recently active first)
+    by scanning for sublime-session-*.sock files and verifying their connectivity.
+    Stale socket files (from crashes or reboots) are automatically cleaned up.
+    """
+    home = os.path.expanduser("~")
+    pi_dir = os.path.join(home, ".pi")
+    pattern = os.path.join(pi_dir, "sublime-session-*.sock")
+    socket_files = glob.glob(pattern)
+    
+    active_sessions_with_mtime = []
+    
+    for sock_path in socket_files:
+        is_active = False
+        
+        # Verify the Unix socket is actually listening
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.settimeout(0.1)  # Extremely fast connection check
+        try:
+            s.connect(sock_path)
+            s.close()
+            is_active = True
+        except Exception:
+            # Socket is dead or stale, clean it up
+            try:
+                os.remove(sock_path)
+            except Exception:
+                pass
+                
+        if is_active:
+            try:
+                mtime = os.path.getmtime(sock_path)
+            except Exception:
+                mtime = 0
+            active_sessions_with_mtime.append((sock_path, mtime))
+            
+    # Sort by mtime descending (most recently active first)
+    active_sessions_with_mtime.sort(key=lambda x: x[1], reverse=True)
+    return [sock_path for sock_path, _ in active_sessions_with_mtime]
+
 
 class PiAskCommand(sublime_plugin.TextCommand):
     """
@@ -61,7 +105,13 @@ class PiAskCommand(sublime_plugin.TextCommand):
         # Show the panel
         window.run_command("show_panel", {"panel": "output.pi_ask_panel"})
         window.focus_view(panel)
-        sublime.status_message("Pi: Type your prompt. Press Enter to submit, Shift+Enter for new line, Esc to cancel.")
+
+        # Check if active session exists to warn early
+        active_sessions = get_active_sessions()
+        if not active_sessions:
+            sublime.status_message("Pi: Warning - No active Pi session detected. Run 'pi' in a terminal.")
+        else:
+            sublime.status_message("Pi: Type your prompt. Press Enter to submit, Shift+Enter for new line, Esc to cancel.")
 
     def is_visible(self):
         # Only show in the context menu if there is a real file behind the view
@@ -81,9 +131,18 @@ class PiClearAndFocusCommand(sublime_plugin.TextCommand):
 class PiSubmitAskCommand(sublime_plugin.TextCommand):
     """
     Command bound to Enter / Ctrl+Enter in the Pi Ask panel.
-    Prepend the reference, writes to the trigger file, and hides the panel.
+    Sends the prompt to the active Pi session over a Unix Domain Socket.
     """
     def run(self, edit):
+        active_sessions = get_active_sessions()
+        if not active_sessions:
+            sublime.error_message(
+                "Pi: No active Pi session detected.\n\n"
+                "Please run 'pi' in a terminal session first, then try submitting again. "
+                "Your typed prompt has been kept in the panel so you do not lose it."
+            )
+            return
+
         question = self.view.substr(sublime.Region(0, self.view.size())).strip()
         reference = self.view.settings().get("pi_ask_reference", "")
         selected_text = self.view.settings().get("pi_ask_selected_text", "")
@@ -114,21 +173,35 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
             else:
                 result = reference
 
-        # Write to Pi Sublime integration trigger file
+        # Send to the most recently active session
+        target_socket = active_sessions[0]
+        success = False
+        
         try:
-            home = os.path.expanduser("~")
-            pi_dir = os.path.join(home, ".pi")
-            os.makedirs(pi_dir, exist_ok=True)
-            trigger_file = os.path.join(pi_dir, "sublime-ask.txt")
-            with open(trigger_file, "w", encoding="utf-8") as f:
-                f.write(result)
-            sublime.status_message("Pi: Sent prompt to running session.")
-        except Exception as e:
-            sublime.status_message("Pi: Error sending prompt to session.")
+            s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            s.settimeout(2.0)  # Safe timeout for delivering the prompt
+            s.connect(target_socket)
+            s.sendall(result.encode("utf-8"))
+            s.shutdown(socket.SHUT_WR)  # Signal EOF to Node.js
+            
+            # Read acknowledgment handshake
+            response = s.recv(1024).decode("utf-8")
+            s.close()
+            if response == "OK":
+                success = True
+        except Exception:
+            pass
 
-        window = self.view.window()
-        if window:
-            window.run_command("hide_panel", {"panel": "output.pi_ask_panel"})
+        if success:
+            sublime.status_message("Pi: Sent prompt to active session.")
+            window = self.view.window()
+            if window:
+                window.run_command("hide_panel", {"panel": "output.pi_ask_panel"})
+        else:
+            sublime.error_message(
+                "Pi: Failed to send prompt.\n\n"
+                "The active session may have closed or timed out. Please check your terminal and try again."
+            )
 
 
 class PiCancelAskCommand(sublime_plugin.TextCommand):
