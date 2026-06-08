@@ -1,49 +1,104 @@
 import glob
+import json
 import os
 import socket
 import sublime
 import sublime_plugin
 
+def is_ancestor_or_same(ancestor, path):
+    """
+    Returns True if ancestor is the same directory as path, or is a parent/ancestor of path.
+    """
+    if not ancestor or not path:
+        return False
+        
+    ancestor = os.path.abspath(ancestor)
+    path = os.path.abspath(path)
+    
+    # On case-insensitive systems (like macOS/Windows), compare case-insensitively
+    ancestor_lower = ancestor.lower()
+    path_lower = path.lower()
+    
+    if ancestor_lower == path_lower:
+        return True
+        
+    # Add trailing path separator to prevent matching /usr/local-foo with /usr/local
+    prefix = ancestor_lower if ancestor_lower.endswith(os.sep) else ancestor_lower + os.sep
+    return path_lower.startswith(prefix)
+
+
 def get_active_sessions():
     """
-    Returns a list of active Pi session Unix socket paths (sorted by most recently active first)
-    by scanning for sublime-session-*.sock files and verifying their connectivity.
-    Stale socket files (from crashes or reboots) are automatically cleaned up.
+    Returns a list of active Pi session info dicts:
+    {"uuid", "pid", "cwd", "socket_path", "last_activity"}
+    by scanning for sublime-session-*.json files and verifying socket connectivity.
+    Stale session and socket files are automatically cleaned up.
     """
     home = os.path.expanduser("~")
     pi_dir = os.path.join(home, ".pi")
-    pattern = os.path.join(pi_dir, "sublime-session-*.sock")
-    socket_files = glob.glob(pattern)
+    pattern = os.path.join(pi_dir, "sublime-session-*.json")
+    session_files = glob.glob(pattern)
     
-    active_sessions_with_mtime = []
+    active_sessions = []
     
-    for sock_path in socket_files:
-        is_active = False
-        
-        # Verify the Unix socket is actually listening
-        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        s.settimeout(0.1)  # Extremely fast connection check
+    for f_path in session_files:
+        filename = os.path.basename(f_path)
         try:
-            s.connect(sock_path)
-            s.close()
-            is_active = True
+            uuid = filename.replace("sublime-session-", "").replace(".json", "")
+            if not uuid:
+                continue
         except Exception:
-            # Socket is dead or stale, clean it up
+            continue
+            
+        # Try loading the session JSON
+        try:
+            with open(f_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            pid = data.get("pid")
+            cwd = data.get("cwd")
+            socket_path = data.get("socketPath")
+            last_activity = data.get("lastActivity", 0)
+        except Exception:
+            # Corrupted JSON, clean it up
             try:
-                os.remove(sock_path)
+                os.remove(f_path)
+            except Exception:
+                pass
+            continue
+            
+        # Verify socket connectivity
+        is_active = False
+        if socket_path and os.path.exists(socket_path):
+            s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            s.settimeout(0.1)  # Extremely fast connection check
+            try:
+                s.connect(socket_path)
+                s.close()
+                is_active = True
             except Exception:
                 pass
                 
         if is_active:
+            active_sessions.append({
+                "uuid": uuid,
+                "pid": pid,
+                "cwd": cwd,
+                "socket_path": socket_path,
+                "last_activity": last_activity
+            })
+        else:
+            # Socket is dead or stale, clean up both the json and socket files
             try:
-                mtime = os.path.getmtime(sock_path)
+                os.remove(f_path)
             except Exception:
-                mtime = 0
-            active_sessions_with_mtime.append((sock_path, mtime))
-            
-    # Sort by mtime descending (most recently active first)
-    active_sessions_with_mtime.sort(key=lambda x: x[1], reverse=True)
-    return [sock_path for sock_path, _ in active_sessions_with_mtime]
+                pass
+            if socket_path and os.path.exists(socket_path):
+                try:
+                    os.remove(socket_path)
+                except Exception:
+                    pass
+                    
+    return active_sessions
 
 
 class PiAskCommand(sublime_plugin.TextCommand):
@@ -131,7 +186,7 @@ class PiClearAndFocusCommand(sublime_plugin.TextCommand):
 class PiSubmitAskCommand(sublime_plugin.TextCommand):
     """
     Command bound to Enter / Ctrl+Enter in the Pi Ask panel.
-    Sends the prompt to the active Pi session over a Unix Domain Socket.
+    Sends the prompt to the matched Pi session over a Unix Domain Socket.
     """
     def run(self, edit):
         active_sessions = get_active_sessions()
@@ -173,24 +228,53 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
             else:
                 result = reference
 
-        # Send to the most recently active session
-        target_socket = active_sessions[0]
-        success = False
+        # Match the target session based on directory and recency
+        file_dir = os.path.dirname(file_name) if file_name else ""
+        target_session = None
         
-        try:
-            s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            s.settimeout(2.0)  # Safe timeout for delivering the prompt
-            s.connect(target_socket)
-            s.sendall(result.encode("utf-8"))
-            s.shutdown(socket.SHUT_WR)  # Signal EOF to Node.js
+        # Rule 1: Global Fallback - If exactly one session exists, use it
+        if len(active_sessions) == 1:
+            target_session = active_sessions[0]
+        else:
+            # Find sessions where cwd is same as or ancestor of file_dir
+            matching_sessions = []
+            if file_dir:
+                for s in active_sessions:
+                    cwd = s.get("cwd")
+                    if cwd and is_ancestor_or_same(cwd, file_dir):
+                        matching_sessions.append(s)
             
-            # Read acknowledgment handshake
-            response = s.recv(1024).decode("utf-8")
-            s.close()
-            if response == "OK":
-                success = True
-        except Exception:
-            pass
+            # Rule 2: Directory Match - If exactly one matches, use it
+            if len(matching_sessions) == 1:
+                target_session = matching_sessions[0]
+            # Rule 3: Recency Tie-Breaker
+            elif len(matching_sessions) > 1:
+                # Multiple matches: pick most recently active match
+                matching_sessions.sort(key=lambda x: x.get("last_activity", 0), reverse=True)
+                target_session = matching_sessions[0]
+            else:
+                # No matches: pick most recently active globally
+                active_sessions.sort(key=lambda x: x.get("last_activity", 0), reverse=True)
+                target_session = active_sessions[0]
+
+        success = False
+        target_socket = target_session.get("socket_path") if target_session else None
+        
+        if target_socket:
+            try:
+                s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                s.settimeout(2.0)  # Safe timeout for delivering the prompt
+                s.connect(target_socket)
+                s.sendall(result.encode("utf-8"))
+                s.shutdown(socket.SHUT_WR)  # Signal EOF to Node.js
+                
+                # Read acknowledgment handshake
+                response = s.recv(1024).decode("utf-8")
+                s.close()
+                if response == "OK":
+                    success = True
+            except Exception:
+                pass
 
         if success:
             sublime.status_message("Pi: Sent prompt to active session.")
@@ -200,7 +284,7 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
         else:
             sublime.error_message(
                 "Pi: Failed to send prompt.\n\n"
-                "The active session may have closed or timed out. Please check your terminal and try again."
+                "The target session may have closed or timed out. Please check your terminal and try again."
             )
 
 

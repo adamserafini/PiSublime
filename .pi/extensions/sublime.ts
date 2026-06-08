@@ -9,6 +9,7 @@ export default function (pi: ExtensionAPI) {
   pi.on("session_start", async (_event, ctx) => {
     const piDir = path.join(os.homedir(), ".pi");
     const uuid = crypto.randomUUID();
+    const sessionFile = path.join(piDir, `sublime-session-${uuid}.json`);
     const socketPath = path.join(piDir, `sublime-session-${uuid}.sock`);
 
     // Ensure directory exists
@@ -21,9 +22,26 @@ export default function (pi: ExtensionAPI) {
       return;
     }
 
+    const touchSessionFile = () => {
+      try {
+        fs.writeFileSync(
+          sessionFile,
+          JSON.stringify({
+            uuid,
+            pid: process.pid,
+            cwd: process.cwd(),
+            socketPath,
+            lastActivity: Date.now(),
+          })
+        );
+      } catch (e) {
+        // ignore
+      }
+    };
+
     // Spin up Unix Domain Socket Server with allowHalfOpen enabled
     const server = net.createServer({ allowHalfOpen: true }, (socket) => {
-      // Handle socket errors (like ECONNRESET or EPIPE) gracefully so they don't crash Pi
+      // Handle socket errors gracefully so they don't crash Pi
       socket.on("error", (err) => {
         // Gracefully ignore connection/socket errors
       });
@@ -37,6 +55,9 @@ export default function (pi: ExtensionAPI) {
         try {
           const content = body.trim();
           if (content) {
+            // Update last activity whenever we receive a message from Sublime
+            touchSessionFile();
+
             if (ctx.isIdle()) {
               pi.sendUserMessage(content);
             } else {
@@ -58,12 +79,21 @@ export default function (pi: ExtensionAPI) {
 
     // Start listening on the Unix Domain Socket
     server.listen(socketPath, () => {
-      // Socket is active and listening
+      // Create session JSON file once socket is listening
+      touchSessionFile();
+    });
+
+    // Also update last activity when agent starts a turn
+    pi.on("agent_start", async () => {
+      touchSessionFile();
     });
 
     const cleanup = () => {
       try {
         server.close();
+        if (fs.existsSync(sessionFile)) {
+          fs.unlinkSync(sessionFile);
+        }
         if (fs.existsSync(socketPath)) {
           fs.unlinkSync(socketPath);
         }
