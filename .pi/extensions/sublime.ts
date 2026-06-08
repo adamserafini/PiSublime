@@ -53,9 +53,6 @@ export default function (pi: ExtensionAPI) {
         try {
           const content = body.trim();
           if (content) {
-            // Update last activity whenever we receive a message from Sublime
-            touchSessionFile();
-
             if (ctx.isIdle()) {
               pi.sendUserMessage(content);
             } else {
