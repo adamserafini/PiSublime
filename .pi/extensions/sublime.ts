@@ -29,7 +29,6 @@ export default function (pi: ExtensionAPI) {
           JSON.stringify({
             uuid,
             cwd: process.cwd(),
-            socketPath,
             lastActivity: Date.now(),
           })
         );

@@ -55,8 +55,8 @@ def get_active_sessions():
             with open(f_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             cwd = data.get("cwd")
-            socket_path = data.get("socketPath")
             last_activity = data.get("lastActivity", 0)
+            socket_path = f_path.replace(".json", ".sock")
         except Exception:
             # Corrupted JSON, clean it up
             try:
