@@ -4,6 +4,9 @@ import os
 import socket
 import sublime
 import sublime_plugin
+import subprocess
+import plistlib
+
 
 def is_ancestor_or_same(ancestor, path):
     """
@@ -297,3 +300,52 @@ class PiCancelAskCommand(sublime_plugin.TextCommand):
         window = self.view.window()
         if window:
             window.run_command("hide_panel", {"panel": "output.pi_ask_panel"})
+
+
+def plugin_loaded():
+    # Only run on macOS
+    if os.name != "posix" or subprocess.check_output(["uname"]).decode("utf-8").strip() != "Darwin":
+        return
+
+    package_dir = os.path.dirname(__file__)
+    app_path = os.path.join(package_dir, "SublHandler.app")
+
+    if os.path.exists(app_path):
+        return
+
+    applescript_path = os.path.join(package_dir, "SublHandler.applescript")
+    if not os.path.exists(applescript_path):
+        print("PiSublime: SublHandler.applescript missing.")
+        return
+
+    try:
+        # Compile using osacompile directly from our file
+        subprocess.run(["osacompile", "-o", app_path, applescript_path], check=True)
+
+        # Inject CFBundleURLTypes into Info.plist
+        plist_path = os.path.join(app_path, "Contents/Info.plist")
+        if os.path.exists(plist_path):
+            with open(plist_path, "rb") as fp:
+                pl = plistlib.load(fp)
+
+            pl["CFBundleURLTypes"] = [
+                {
+                    "CFBundleURLName": "Sublime Text URL Handler",
+                    "CFBundleURLSchemes": ["subl"],
+                }
+            ]
+
+            with open(plist_path, "wb") as fp:
+                plistlib.dump(pl, fp)
+
+        # Register with Launch Services
+        subprocess.run([
+            "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister",
+            "-f", app_path
+        ], check=True)
+
+
+    except Exception as e:
+        print("PiSublime: Failed to bootstrap SublHandler.app:", e)
+
+
