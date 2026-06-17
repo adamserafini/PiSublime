@@ -26,6 +26,45 @@ function replaceWithClickableLinks(text: string): string {
   });
 }
 
+// Helper to strip OSC 8 terminal hyperlink escape sequences, preserving only display text
+function stripClickableLinks(val: any): any {
+  if (typeof val === "string") {
+    return val.replace(/\x1b\]8;;[^\x1b]*\x1b\\([^\x1b]*)\x1b\]8;;\x1b\\/g, "$1");
+  }
+  if (Array.isArray(val)) {
+    return val.map(stripClickableLinks);
+  }
+  if (val && typeof val === "object") {
+    const res: any = {};
+    for (const key of Object.keys(val)) {
+      res[key] = stripClickableLinks(val[key]);
+    }
+    return res;
+  }
+  return val;
+}
+
+// Helper to strip OSC 8 links from message contents
+function stripLinksFromMessageContent(content: any): any {
+  if (typeof content === "string") {
+    return stripClickableLinks(content);
+  }
+  if (Array.isArray(content)) {
+    return content.map(block => {
+      if (block && typeof block === "object") {
+        if (block.type === "text" && typeof block.text === "string") {
+          return {
+            ...block,
+            text: stripClickableLinks(block.text)
+          };
+        }
+      }
+      return block;
+    });
+  }
+  return content;
+}
+
 export default function (pi: ExtensionAPI) {
   // Inject instructions to the system prompt to guide the LLM to write clickable links
   pi.on("before_agent_start", async (event, _ctx) => {
@@ -35,7 +74,6 @@ export default function (pi: ExtensionAPI) {
       systemPrompt: event.systemPrompt + "\n" + hint
     };
   });
-
 
   // Intercept tool results (like bash outputs or read results) to make files:lines clickable
   pi.on("tool_result", async (event, _ctx) => {
@@ -79,6 +117,27 @@ export default function (pi: ExtensionAPI) {
           content: newContent
         }
       };
+    }
+  });
+
+  // Clean up messages sent to the LLM so it never sees OSC 8 hyperlink escape sequences.
+  // This prevents LLM confusion, token waste, and accidental raw escape sequence outputs in tool calls or code.
+  pi.on("context", async (event, _ctx) => {
+    const cleanedMessages = event.messages.map(m => {
+      return {
+        ...m,
+        content: stripLinksFromMessageContent(m.content)
+      };
+    });
+    return { messages: cleanedMessages };
+  });
+
+  // Clean up tool call arguments to strip any accidental OSC 8 sequences before execution.
+  pi.on("tool_call", async (event, _ctx) => {
+    if (event.input) {
+      for (const key of Object.keys(event.input)) {
+        event.input[key] = stripClickableLinks(event.input[key]);
+      }
     }
   });
 }
