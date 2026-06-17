@@ -20,6 +20,14 @@ mkdir -p ~/.pi/agent/extensions && ln -sf "$(pwd)/.pi/extensions/sublime.ts" ~/.
 
 Whenever you run `pi` in your terminal, the extension will automatically load in the background.
 
+### Step 3: Install the Sublime Terminal Links Extension
+
+To enable clickable terminal hyperlinks that automatically open file paths and line numbers directly in Sublime Text from your `pi` agent outputs:
+
+```bash
+ln -sf "$(pwd)/.pi/extensions/sublime-links.ts" ~/.pi/agent/extensions/sublime-links.ts
+```
+
 ## Usage
 
 Select some text or put the cursor where you want to prompt. Select the `Pi: Ask` command from Command Palette. A text box for prompt will appear, `Shift+Enter` for new line, `Enter` to submit.
