@@ -1,4 +1,16 @@
-# PiSublime
+<div align="center">
+  <h1>PiSublime</h1>
+  <p><strong>A Sublime Text 4 plugin and <code>Pi</code> companion extension</strong></p>
+  <p>
+    🚀 Send selected context directly to active terminal sessions &nbsp;|&nbsp; 🔗 Click terminal paths to open instantly in Sublime Text 4
+  </p>
+  <p>
+    <a href="#installation"><b>Installation</b></a> &bull;
+    <a href="#usage"><b>Usage</b></a> &bull;
+    <a href="#how-it-works"><b>How It Works</b></a>
+  </p>
+  <hr>
+</div>
 
 A Sublime Text 4 plugin and `Pi` companion extension that enables:
 
