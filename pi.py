@@ -229,10 +229,6 @@ class PiSidebarAskCommand(sublime_plugin.WindowCommand):
         else:
             sublime.status_message("Pi: Type your prompt. Press Enter to submit, Shift+Enter for new line, Esc to cancel.")
 
-    def is_visible(self, paths=None, files=None):
-        if not paths and files:
-            paths = files
-        return bool(paths)
 
 
 class PiClearAndFocusCommand(sublime_plugin.TextCommand):
