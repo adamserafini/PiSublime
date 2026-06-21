@@ -14,19 +14,13 @@ ln -s "$(pwd)" ~/Library/Application\ Support/Sublime\ Text/Packages/PiSublime
 
 ### Step 2: Install the Pi Extension
 
+To register the Pi extension (which starts the background socket server and enables clickable terminal hyperlinks to open file paths and line numbers directly in Sublime Text):
+
 ```bash
-mkdir -p ~/.pi/agent/extensions && ln -sf "$(pwd)/.pi/extensions/sublime.ts" ~/.pi/agent/extensions/sublime.ts
+mkdir -p ~/.pi/agent/extensions && ln -sf "$(pwd)/.pi/extensions/pisublime.ts" ~/.pi/agent/extensions/pisublime.ts
 ```
 
 Whenever you run `pi` in your terminal, the extension will automatically load in the background.
-
-### Step 3: Install the Sublime Terminal Links Extension
-
-To enable clickable terminal hyperlinks that automatically open file paths and line numbers directly in Sublime Text from your `pi` agent outputs:
-
-```bash
-ln -sf "$(pwd)/.pi/extensions/sublime-links.ts" ~/.pi/agent/extensions/sublime-links.ts
-```
 
 ## Usage
 

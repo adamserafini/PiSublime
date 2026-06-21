@@ -1,12 +1,15 @@
 import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
+import * as net from "node:net";
+import * as crypto from "node:crypto";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 // Helper to convert plain file:line or file paths to OSC 8 terminal hyperlinks
 function replaceWithClickableLinks(text: string): string {
-  // Regex to match path-like structures with an optional line number:
-  // e.g. /path/to/file.ext:123 or path/to/file.ext
-  const regex = /(?:^|[\s"'`(])(\/?[\w_.-]+(?:\/[\w_.-]+)*\.[a-zA-Z0-9]+)(?::(\d+))?\b/g;
+  // Regex to match path-like structures with an optional line number or range:
+  // e.g. /path/to/file.ext:123 or path/to/file.ext:78-91 or path/to/file.ext
+  const regex = /(?:^|[\s"'`(])(\/?[\w_.-]+(?:\/[\w_.-]+)*\.[a-zA-Z0-9]+)(?::(\d+)(?:-\d+)?)?\b/g;
 
   return text.replace(regex, (match, filePath, line) => {
     // Keep prefix if there was a space, quote, or parenthesis
@@ -15,7 +18,7 @@ function replaceWithClickableLinks(text: string): string {
       const absolutePath = path.resolve(filePath);
       if (fs.existsSync(absolutePath) && fs.statSync(absolutePath).isFile()) {
         const lineParam = line ? `&line=${line}` : "";
-        const displayText = line ? `${filePath}:${line}` : filePath;
+        const displayText = match.slice(prefix.length);
         const link = `\x1b]8;;subl://open?url=file://${absolutePath}${lineParam}\x1b\\${displayText}\x1b]8;;\x1b\\`;
         return prefix + link;
       }
@@ -66,6 +69,116 @@ function stripLinksFromMessageContent(content: any): any {
 }
 
 export default function (pi: ExtensionAPI) {
+  // --- Section 1: Sublime Text socket server and communication ---
+  pi.on("session_start", async (_event, ctx) => {
+    const piDir = path.join(os.homedir(), ".pi");
+    const uuid = crypto.randomUUID();
+    const sessionFile = path.join(piDir, `sublime-session-${uuid}.json`);
+    const socketPath = path.join(piDir, `sublime-session-${uuid}.sock`);
+
+    // Ensure directory exists
+    try {
+      if (!fs.existsSync(piDir)) {
+        fs.mkdirSync(piDir, { recursive: true });
+      }
+    } catch (e) {
+      console.error("PiSublime Extension: Failed to create .pi directory:", e);
+      return;
+    }
+
+    const touchSessionFile = () => {
+      try {
+        fs.writeFileSync(
+          sessionFile,
+          JSON.stringify({
+            uuid,
+            cwd: process.cwd(),
+            lastActivity: Date.now(),
+          })
+        );
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    // Spin up Unix Domain Socket Server with allowHalfOpen enabled
+    const server = net.createServer({ allowHalfOpen: true }, (socket) => {
+      // Handle socket errors gracefully so they don't crash Pi
+      socket.on("error", (err) => {
+        // Gracefully ignore connection/socket errors
+      });
+
+      let body = "";
+      socket.on("data", (chunk) => {
+        body += chunk.toString();
+      });
+
+      socket.on("end", () => {
+        try {
+          const content = body.trim();
+          if (content) {
+            if (ctx.isIdle()) {
+              pi.sendUserMessage(content);
+            } else {
+              pi.sendUserMessage(content, { deliverAs: "steer" });
+              if (ctx.hasUI) {
+                ctx.ui.notify("Sublime prompt queued as steering", "info");
+              }
+            }
+          }
+          // Send success handshake back to Sublime
+          socket.write("OK");
+        } catch (err) {
+          // Ignore write errors on closed/closing socket
+        } finally {
+          socket.end();
+        }
+      });
+    });
+
+    // Start listening on the Unix Domain Socket
+    server.listen(socketPath, () => {
+      // Create session JSON file once socket is listening
+      touchSessionFile();
+    });
+
+    // Update last activity when agent starts execution (corresponds with a user having submitted a prompt)
+    pi.on("agent_start", () => {
+      touchSessionFile();
+    });
+
+    const cleanup = () => {
+      try {
+        server.close();
+        if (fs.existsSync(sessionFile)) {
+          fs.unlinkSync(sessionFile);
+        }
+        if (fs.existsSync(socketPath)) {
+          fs.unlinkSync(socketPath);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    // Clean up on exit
+    process.on("exit", cleanup);
+    process.on("SIGINT", () => {
+      cleanup();
+      process.exit();
+    });
+    process.on("SIGTERM", () => {
+      cleanup();
+      process.exit();
+    });
+
+    if (ctx.hasUI) {
+      ctx.ui.notify("PiSublime integration active!", "info");
+    }
+  });
+
+  // --- Section 2: Interactive terminal link generation and formatting ---
+
   // Inject instructions to the system prompt to guide the LLM to write clickable links
   pi.on("before_agent_start", async (event, _ctx) => {
     const hint = "When referring to lines of code in specific files, always use the colon-notation format `path/to/file.ext:line` (e.g., `src/main.ts:15`)";
