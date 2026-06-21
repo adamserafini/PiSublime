@@ -1,7 +1,10 @@
 [
     {
         "caption": "Pi: Ask",
-        "command": "pi_sidebar_ask"
+        "command": "pi_sidebar_ask",
+        "args": {
+            "paths": []
+        }
     },
     {
         "caption": "-",
