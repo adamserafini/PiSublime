@@ -106,6 +106,29 @@ def get_active_sessions():
     return active_sessions
 
 
+def configure_panel(panel, reference, selected_text, target_path):
+    """
+    Configures settings on the Pi ask panel view.
+    """
+    panel.set_scratch(True)
+    panel.set_read_only(False)
+
+    settings = panel.settings()
+    panel_settings = {
+        "word_wrap": True,
+        "line_numbers": False,
+        "gutter": False,
+        "draw_centered": False,
+        "auto_indent": True,
+        "pi_ask_panel": True,
+        "pi_ask_reference": reference,
+        "pi_ask_selected_text": selected_text,
+        "pi_ask_target_path": target_path,
+    }
+    for key, value in panel_settings.items():
+        settings.set(key, value)
+
+
 class PiAskCommand(sublime_plugin.TextCommand):
     """
     Opens a multi-line input panel at the bottom of the screen to submit a prompt to Pi.
@@ -146,19 +169,7 @@ class PiAskCommand(sublime_plugin.TextCommand):
         panel = window.create_output_panel("pi_ask_panel")
 
         # Configure panel settings
-        panel.set_scratch(True)
-        panel.set_read_only(False)
-
-        settings = panel.settings()
-        settings.set("word_wrap", True)
-        settings.set("line_numbers", False)
-        settings.set("gutter", False)
-        settings.set("draw_centered", False)
-        settings.set("auto_indent", True)
-        settings.set("pi_ask_panel", True)
-        settings.set("pi_ask_reference", reference)
-        settings.set("pi_ask_selected_text", selected_text)
-        settings.set("pi_ask_file_name", file_name)
+        configure_panel(panel, reference, selected_text, file_name)
 
         # Clear existing content and set selection to start
         panel.run_command("pi_clear_and_focus")
@@ -211,19 +222,7 @@ class PiSidebarAskCommand(sublime_plugin.WindowCommand):
         panel = window.create_output_panel("pi_ask_panel")
 
         # Configure panel settings
-        panel.set_scratch(True)
-        panel.set_read_only(False)
-
-        settings = panel.settings()
-        settings.set("word_wrap", True)
-        settings.set("line_numbers", False)
-        settings.set("gutter", False)
-        settings.set("draw_centered", False)
-        settings.set("auto_indent", True)
-        settings.set("pi_ask_panel", True)
-        settings.set("pi_ask_reference", reference)
-        settings.set("pi_ask_selected_text", selected_text)
-        settings.set("pi_ask_file_name", target_path)
+        configure_panel(panel, reference, selected_text, target_path)
 
         # Clear existing content and set selection to start
         panel.run_command("pi_clear_and_focus")
@@ -274,12 +273,12 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
         question = self.view.substr(sublime.Region(0, self.view.size())).strip()
         reference = self.view.settings().get("pi_ask_reference", "")
         selected_text = self.view.settings().get("pi_ask_selected_text", "")
-        file_name = self.view.settings().get("pi_ask_file_name", "")
+        target_path = self.view.settings().get("pi_ask_target_path", "")
 
         # Format the final prompt
         if selected_text and selected_text.strip():
             # Get file extension for markdown syntax highlighting
-            _, ext = os.path.splitext(file_name)
+            _, ext = os.path.splitext(target_path)
             syntax = ext.lstrip(".").lower() if ext else ""
 
             # Format with embedded code block
@@ -297,10 +296,10 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
                 result = reference
 
         # Match the target session based on directory and recency
-        if file_name and os.path.isdir(file_name):
-            file_dir = file_name
+        if target_path and os.path.isdir(target_path):
+            file_dir = target_path
         else:
-            file_dir = os.path.dirname(file_name) if file_name else ""
+            file_dir = os.path.dirname(target_path) if target_path else ""
 
         target_session = None
 
