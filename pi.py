@@ -309,14 +309,16 @@ def plugin_loaded():
 
     package_dir = os.path.dirname(__file__)
     app_path = os.path.join(package_dir, "SublHandler.app")
-
-    if os.path.exists(app_path):
-        return
-
     applescript_path = os.path.join(package_dir, "SublHandler.applescript")
+
     if not os.path.exists(applescript_path):
         print("PiSublime: SublHandler.applescript missing.")
         return
+
+    if os.path.exists(app_path):
+        # Only skip if the compiled app is newer than or equal to the source AppleScript
+        if os.path.getmtime(applescript_path) <= os.path.getmtime(app_path):
+            return
 
     try:
         # Compile using osacompile directly from our file
