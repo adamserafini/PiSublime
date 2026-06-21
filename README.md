@@ -1,8 +1,8 @@
 <div align="center">
   <h1>PiSublime</h1>
-  <p><strong>A Sublime Text 4 plugin and <code>Pi</code> companion extension</strong></p>
+  <p><strong>Sublime Text 4 plugin and <code>Pi</code> companion extension</strong></p>
   <p>
-    🚀 Send selected context directly to active terminal sessions &nbsp;|&nbsp; 🔗 Click terminal paths to open instantly in Sublime Text 4
+    🎯 Send selected context directly to terminal &nbsp;|&nbsp; 🔗 Hyperlink from terminal into your editor
   </p>
   <p>
     <a href="#installation"><b>Installation</b></a> &bull;
@@ -17,7 +17,7 @@ A Sublime Text 4 plugin and `Pi` companion extension that enables:
 1. Sending selected context directly to your active `Pi` terminal session.
 1. Hyperlinking from `Pi` terminal sessions to the relevant code in Sublime Text 4 using [OSC 8 escape sequences](https://github.com/Alhadis/OSC8-Adoption/).
 
-So far, these are the *only* two integrations that I actually want between an editor and a terminal-based coding harness.
+So far, these are the *only* two integrations I need between an editor and a terminal-based coding harness.
 
 The idea for context injection is stolen from `aider`'s [watch files feature](https://aider.chat/docs/usage/watch.html). But in our case, instead of the harness watching the files, the editor watches `Pi` sessions and figures out which one the user is most likely working on.
 
@@ -93,7 +93,7 @@ Crucially, the extension also hooks into the `"context"` event to strip these ra
 
 ## Things I'm Not Happy About
 
-As this is currently working for *me*, and I suspect the intersection between `Pi` and Sublime Text 4 users is quite small, my motivation to fix these problems is fairly low. But feel free to leave an issue or even make PRs if you'd like inject me with additional enthusiasm.
+As this is currently working for *me*, and I suspect the intersection between `Pi` and Sublime Text 4 users is quite small, my motivation to fix these problems is fairly low. But feel free to leave an issue or even make PRs if you'd like to inject me with additional enthusiasm.
 
 ### Tests
 
@@ -101,4 +101,4 @@ Hahaha. Good one. But seriously, the hyperlinking is surprisingly fiddly and inv
 
 ### Protocol
 
-The OS-level protocol (`subl://`) only works on Mac OSX. To be honest, a `subl` protocol would be a useful, cross-OS project, but as I don't currently have requirements for one beyond this usecase, and it would involve testing on Windows and Linux, it's not a project I currently have any interest in.
+The OS-level protocol (`subl://`) only works on Mac OSX. To be honest, a `subl` protocol would be a useful, stand-alone, cross-OS project, but as I don't currently have requirements for one beyond this use-case, and it would involve testing on Windows and Linux, it's not a project I currently have any interest in.
