@@ -4,13 +4,36 @@ A Sublime Text 4 plugin to send code selections and prompts directly to your act
 
 ## Installation
 
-Clone this repository onto your computer. This plugin is currently tested only on **macOS** and only **manually**. It might work on Linux or Windows if the installation paths below were adjusted.
+You can install PiSublime either via **Package Control** (which handles installation and automatic updates seamlessly without manual cloning) or **Manually** (great for local development).
+
+______________________________________________________________________
 
 ### Step 1: Install the Sublime Text 4 Plugin
 
+#### Method A: Via Package Control (Recommended - Auto-updates)
+
+You can add this GitHub repository as a custom source in Package Control. It will automatically download, install, and keep the plugin updated on every commit:
+
+1. Open the Command Palette in Sublime Text (`Cmd+Shift+P` on macOS, `Ctrl+Shift+P` on Windows/Linux).
+1. Type and select **`Package Control: Add Repository`**.
+1. Paste the repository URL: `https://github.com/adamserafini/PiSublime` and press Enter.
+1. Open the Command Palette again and select **`Package Control: Install Package`**.
+1. Search for **`PiSublime`** and press Enter to install it.
+
+#### Method B: Manual Installation (For Local Development)
+
+Clone this repository and symlink it into your Sublime Text packages directory:
+
 ```bash
+# Clone the repository
+git clone https://github.com/adamserafini/PiSublime.git
+cd PiSublime
+
+# Symlink it to your Sublime Text Packages directory
 ln -s "$(pwd)" ~/Library/Application\ Support/Sublime\ Text/Packages/PiSublime
 ```
+
+______________________________________________________________________
 
 ### Step 2: Install the Pi Extension
 
