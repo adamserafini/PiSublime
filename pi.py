@@ -174,6 +174,67 @@ class PiAskCommand(sublime_plugin.TextCommand):
         return self.view.file_name() is not None
 
 
+class PiSidebarAskCommand(sublime_plugin.WindowCommand):
+    """
+    Opens the Pi Ask panel with the right-clicked file/directory from the sidebar as context.
+    """
+    def run(self, paths=None, files=None):
+        if not paths and files:
+            paths = files
+        if not paths:
+            sublime.status_message("Pi: No file or directory selected in the sidebar.")
+            return
+
+        # Take the first selected path
+        target_path = paths[0]
+        
+        # Configure the panel context
+        selected_text = ""
+        reference = target_path
+
+        window = self.window
+        if not window:
+            sublime.status_message("Pi: No active window available.")
+            return
+
+        # Create or retrieve the multi-line output panel
+        panel = window.create_output_panel('pi_ask_panel')
+        
+        # Configure panel settings
+        panel.set_scratch(True)
+        panel.set_read_only(False)
+        
+        settings = panel.settings()
+        settings.set("word_wrap", True)
+        settings.set("line_numbers", False)
+        settings.set("gutter", False)
+        settings.set("draw_centered", False)
+        settings.set("auto_indent", True)
+        settings.set("pi_ask_panel", True)
+        settings.set("pi_ask_reference", reference)
+        settings.set("pi_ask_selected_text", selected_text)
+        settings.set("pi_ask_file_name", target_path)
+
+        # Clear existing content and set selection to start
+        panel.run_command("pi_clear_and_focus")
+
+        # Show the panel
+        window.run_command("show_panel", {"panel": "output.pi_ask_panel"})
+        window.focus_view(panel)
+
+        # Check if active session exists to warn early
+        active_sessions = get_active_sessions()
+        if not active_sessions:
+            sublime.status_message("Pi: Warning - No active Pi session detected. Run 'pi' in a terminal.")
+        else:
+            sublime.status_message("Pi: Type your prompt. Press Enter to submit, Shift+Enter for new line, Esc to cancel.")
+
+    def is_visible(self, paths=None, files=None):
+        if not paths and files:
+            paths = files
+        return bool(paths)
+
+
 class PiClearAndFocusCommand(sublime_plugin.TextCommand):
     """
     Clears the contents of the view and resets the selection to the beginning.
@@ -230,7 +291,11 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
                 result = reference
 
         # Match the target session based on directory and recency
-        file_dir = os.path.dirname(file_name) if file_name else ""
+        if file_name and os.path.isdir(file_name):
+            file_dir = file_name
+        else:
+            file_dir = os.path.dirname(file_name) if file_name else ""
+
         target_session = None
         
         # Rule 1: Global Fallback - If exactly one session exists, use it

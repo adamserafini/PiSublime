@@ -1,0 +1,10 @@
+[
+    {
+        "caption": "Pi: Ask",
+        "command": "pi_sidebar_ask"
+    },
+    {
+        "caption": "-",
+        "id": "pi_separator"
+    }
+]
