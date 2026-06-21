@@ -1,8 +1,17 @@
 # PiSublime
 
-A Sublime Text 4 plugin to send code selections and prompts directly to your active `Pi` terminal session.
+A Sublime Text 4 plugin and `Pi` companion extension that enables:
+
+1. Sending selected context directly to your active `Pi` terminal session.
+1. Hyperlinking from `Pi` terminal sessions to the relevant code in Sublime Text 4 using [OSC 8 escape sequences](https://github.com/Alhadis/OSC8-Adoption/).
+
+So far, these are the *only* two integrations that I actually want between an editor and a coding harness.
+
+The idea for context injection is stolen from `aider`'s [watch files feature](https://aider.chat/docs/usage/watch.html). But in our case, instead of the harness watching the files, the editor watches `Pi` sessions and figures out which one the user is most likely working on.
 
 ## Installation
+
+Note: hyperlinking to ST4 from `Pi` only works on MacOSX.
 
 Prerequisite: have the `subl` CLI [installed](https://www.sublimetext.com/docs/command_line.html).
 
