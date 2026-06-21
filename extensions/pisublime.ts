@@ -122,7 +122,7 @@ export default function (pi: ExtensionAPI) {
             } else {
               pi.sendUserMessage(content, { deliverAs: "steer" });
               if (ctx.hasUI) {
-                ctx.ui.notify("Sublime prompt queued as steering", "info");
+                ctx.ui.notify("Sublime prompt queued as steering.", "info");
               }
             }
           }
@@ -173,7 +173,7 @@ export default function (pi: ExtensionAPI) {
     });
 
     if (ctx.hasUI) {
-      ctx.ui.notify("PiSublime integration active!", "info");
+      ctx.ui.notify("PiSublime integration is active.", "info");
     }
   });
 
