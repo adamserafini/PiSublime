@@ -67,22 +67,32 @@ On exit, the `Pi` extension cleans up the socket and file.
 
 ### Hyperlinking
 
-The project includes a `SublHandler.applescript` implementing a basic `subl` OS-level protocol handler:
+The project includes a `SublHandler.applescript` implementing a basic `subl` OS-level protocol handler, associating itself with URLs like this:
 
 ```text
-subl://open?url=file:///Users/adamserafini/Code/PiSublime/extensions/pisublime.ts&line=78
+subl://open?url=file:///Some/path/pisublime.ts&line=78
 ```
 
-This protocol handler gets compiled and registered to the OS when the Sublime plug-in is loaded, translating the URL to shell invocation of the `subl` CLI, which conveniently, accepts a `:line` suffix.
+This protocol handler gets compiled and registered to the OS when the Sublime plug-in is loaded, translating the URL to shell invocation of the `subl` CLI, which conveniently, accepts a `:line` suffix in its path argument.
 
-The `pisublime` Pi extension intercepts assistant messages and tool execution results to find file paths (e.g., `src/main.ts:15` or `src/main.ts:78-91`). It converts these text patterns into interactive terminal links using OSC 8 escape sequences wrapping a `subl://open?url=file://...` protocol.
-
-When you click a link in your terminal, the OS opens `SublHandler.app` (which is compiled from `SublHandler.applescript`). The app parses the file path and line number from the query parameters, then executes the `subl` binary to open the file and jump to the target line.
+The `Pi` extension makes a tiny modification to the system prompt, encouraging your LLM to write paths in the colon-notation format (`path/to/file.ext:line`). Assistant messages and tool execution results are intercepted to find file paths (e.g., `src/main.ts:15` or `src/main.ts:78-91`). It converts these text patterns into interactive terminal links using OSC 8 escape sequences wrapping the `subl://open?url=file://...` protocol.
 
 Crucially, the extension also hooks into the `"context"` event to strip these raw terminal escape sequences before they are sent back to the LLM. This keeps the prompt history clean, saves tokens, and prevents the LLM from trying to output raw terminal control characters or getting confused during tool calls.
 
-## What I'm Not Happy About
+## Things I'm Not Happy About
+
+As this is currently working for *me*, and I suspect the intersection between `Pi` and Sublime Text 4 users is quite small, my motivation to fix these problems is fairly low. But feel free to leave an issue or even make PRs if you'd like inject me with additional enthusiasm.
 
 ### Tests
 
-Hahaha. Good one.
+Hahaha. Good one. But seriously, the hyperlinking is surprisingly fiddly and involves regex. Some tests would probably illuminate whether it does, in fact, work as intended.
+
+### Bridge
+
+I'm not convinced that it's necessary to create both the `.sock` AND a separate a `.json` file with session recency information, presumably `Pi` has an API (or could have an API) to query the last activity time, which could in turn be returned by the `socket` allowing Sublime to choose the relevant session. Then `Pi` would no longer need to write session info to a file.
+
+I also don't think the `.sock` are being created in the most appropriate location on the filesystem.
+
+### Protocol
+
+The OS-level protocol (`subl://`) only works on Mac OSX. To be honest, a `subl` protocol would be a useful, cross-OS project, but as I don't currently have requirements for one beyond this usecase, and it would involve testing on Windows and Linux, it's not a project I currently have any interest in.
