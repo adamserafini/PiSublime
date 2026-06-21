@@ -30,7 +30,6 @@ function replaceWithClickableLinks(text: string): string {
 }
 
 // Helper to strip OSC 8 terminal hyperlink escape sequences, preserving only display text
-// biome-ignore lint/suspicious/noExplicitAny: generic json input
 function stripClickableLinks(val: any): any {
   if (typeof val === "string") {
     return val.replace(
@@ -53,7 +52,6 @@ function stripClickableLinks(val: any): any {
   return val;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: generic input/output
 function stripLinksFromMessageContent(content: any): any {
   if (typeof content === "string") {
     return stripClickableLinks(content);
