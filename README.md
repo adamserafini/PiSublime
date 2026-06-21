@@ -4,23 +4,9 @@ A Sublime Text 4 plugin to send code selections and prompts directly to your act
 
 ## Installation
 
-You can install PiSublime either via **Package Control** (which handles installation and automatic updates seamlessly without manual cloning) or **Manually** (great for local development).
-
-______________________________________________________________________
+Prerequisite: have the `subl` CLI [installed](https://www.sublimetext.com/docs/command_line.html).
 
 ### Step 1: Install the Sublime Text 4 Plugin
-
-#### Method A: Via Package Control (Recommended - Auto-updates)
-
-You can add this GitHub repository as a custom source in Package Control. It will automatically download, install, and keep the plugin updated on every commit:
-
-1. Open the Command Palette in Sublime Text (`Cmd+Shift+P` on macOS).
-1. Type and select **`Package Control: Add Repository`**.
-1. Paste the repository URL: `https://github.com/adamserafini/PiSublime` and press Enter.
-1. Open the Command Palette again and select **`Package Control: Install Package`**.
-1. Search for **`PiSublime`** and press Enter to install it.
-
-#### Method B: Manual Installation (For Local Development)
 
 Clone this repository and symlink it into your Sublime Text packages directory:
 
@@ -33,19 +19,9 @@ cd PiSublime
 ln -s "$(pwd)" ~/Library/Application\ Support/Sublime\ Text/Packages/PiSublime
 ```
 
-______________________________________________________________________
-
 ### Step 2: Install the Pi Extension
 
-Install the Pi extension package directly into your global Pi settings. This registers the background socket server and enables clickable terminal hyperlinks to open files and line ranges directly in Sublime Text.
-
-You can install it directly from GitHub:
-
-```bash
-pi install git:github.com/adamserafini/PiSublime
-```
-
-Or, if you are developing locally, install from the root of your cloned repository:
+Install from the root of your cloned repository:
 
 ```bash
 pi install .
