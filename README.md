@@ -25,8 +25,6 @@ The idea for context injection is stolen from `aider`'s [watch files feature](ht
 
 Note: hyperlinking to ST4 from `Pi` only works on MacOSX.
 
-Prerequisite: have the `subl` CLI [installed](https://www.sublimetext.com/docs/command_line.html).
-
 ### Step 1: Install the Sublime Text 4 Plugin
 
 Clone this repository and symlink it into your Sublime Text packages directory:
