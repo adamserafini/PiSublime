@@ -50,7 +50,7 @@ pi install .
 
 ### Context Injection
 
-Select some text or put the cursor where you want to prompt. Select the `Pi: Ask` command from Command Palette. A text box for prompt will appear, `Shift+Enter` for new line, `Enter` to submit.
+Select some text, put the cursor where you want to prompt or right-click a file or folder in the sidebar and select the `Pi: Ask` command from the context menu or Command Palette. A text box for prompt will appear, `Shift+Enter` for new line, `Enter` to submit.
 
 If there is no running `Pi` session, user will be informed.
 
