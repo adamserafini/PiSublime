@@ -64,6 +64,16 @@ Otherwise, prompts you submit from Sublime Text will execute in a single `Pi` se
 1. **Directory Recency Tie-Breaker:** If multiple sessions match the file's directory tree, the session that is **most recently active** (updated on each user prompt submission and session startup) will be used.
 1. **Global Recency Fallback:** If multiple sessions are running but **none** match the current file's directory tree, the session that is **most recently active** globally will be used.
 
+### Hyperlinking
+
+The project includes a `SublHandler.applescript` that implements a basic `subl` OS-level protocol handler, which associates with URLs like this:
+
+```text
+subl://open?url=file:///Users/adamserafini/Code/PiSublime/extensions/pisublime.ts&line=78
+```
+
+This protocol handler is registered to the OS, allowing you to click file paths directly inside your Pi terminal outputs and have them instantly open at the correct line in Sublime Text.
+
 ## Features
 
 - `pi.py`: Contains the `Pi: Ask` command. Prompt Pi about selected text.
@@ -77,3 +87,17 @@ The `Pi` extension starts a Unix Domain Socket server at `~/.pi/sublime-session-
 Before submitting a prompt, the Sublime plugin verifies active sessions by connecting to their sockets. Stale/crashed session files are deleted. The Sublime plugin selects the best matching session and writes the prompt to its socket. The `Pi` extension reads from the socket and injects the prompt as a user message.
 
 On exit, the `Pi` extension cleans up the socket and file.
+
+### Hyperlinking
+
+The `pisublime` Pi extension intercepts assistant messages and tool execution results to find file paths (e.g., `src/main.ts:15` or `src/main.ts:78-91`). It converts these text patterns into interactive terminal links using OSC 8 escape sequences wrapping a `subl://open?url=file://...` protocol.
+
+When you click a link in your terminal, the OS opens `SublHandler.app` (which is compiled from `SublHandler.applescript`). The app parses the file path and line number from the query parameters, then executes the `subl` binary to open the file and jump to the target line.
+
+Crucially, the extension also hooks into the `"context"` event to strip these raw terminal escape sequences before they are sent back to the LLM. This keeps the prompt history clean, saves tokens, and prevents the LLM from trying to output raw terminal control characters or getting confused during tool calls.
+
+## What I'm Not Happy About
+
+### Tests
+
+Hahaha. Good one.
