@@ -1,16 +1,16 @@
 {
-  "name": "pisublime",
-  "version": "1.0.0",
-  "description": "Sublime Text 4 integration and clickable terminal hyperlinks for Pi",
-  "keywords": [
-    "pi-package"
-  ],
-  "pi": {
-    "extensions": [
-      "extensions/pisublime.ts"
-    ]
-  },
-  "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*"
-  }
+	"name": "pisublime",
+	"version": "1.0.0",
+	"description": "Sublime Text 4 integration and clickable terminal hyperlinks for Pi",
+	"keywords": [
+		"pi-package"
+	],
+	"pi": {
+		"extensions": [
+			"extensions/pisublime.ts"
+		]
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-coding-agent": "*"
+	}
 }
