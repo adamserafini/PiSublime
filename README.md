@@ -87,12 +87,6 @@ As this is currently working for *me*, and I suspect the intersection between `P
 
 Hahaha. Good one. But seriously, the hyperlinking is surprisingly fiddly and involves regex. Some tests would probably illuminate whether it does, in fact, work as intended.
 
-### Bridge
-
-I'm not convinced that it's necessary to create both the `.sock` AND a separate a `.json` file with session recency information, presumably `Pi` has an API (or could have an API) to query the last activity time, which could in turn be returned by the `socket` allowing Sublime to choose the relevant session. Then `Pi` would no longer need to write session info to a file.
-
-I also don't think the `.sock` are being created in the most appropriate location on the filesystem.
-
 ### Protocol
 
 The OS-level protocol (`subl://`) only works on Mac OSX. To be honest, a `subl` protocol would be a useful, cross-OS project, but as I don't currently have requirements for one beyond this usecase, and it would involve testing on Windows and Linux, it's not a project I currently have any interest in.
