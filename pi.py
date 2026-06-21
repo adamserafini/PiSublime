@@ -14,19 +14,21 @@ def is_ancestor_or_same(ancestor, path):
     """
     if not ancestor or not path:
         return False
-        
+
     ancestor = os.path.abspath(ancestor)
     path = os.path.abspath(path)
-    
+
     # On case-insensitive systems (like macOS/Windows), compare case-insensitively
     ancestor_lower = ancestor.lower()
     path_lower = path.lower()
-    
+
     if ancestor_lower == path_lower:
         return True
-        
+
     # Add trailing path separator to prevent matching /usr/local-foo with /usr/local
-    prefix = ancestor_lower if ancestor_lower.endswith(os.sep) else ancestor_lower + os.sep
+    prefix = (
+        ancestor_lower if ancestor_lower.endswith(os.sep) else ancestor_lower + os.sep
+    )
     return path_lower.startswith(prefix)
 
 
@@ -41,9 +43,9 @@ def get_active_sessions():
     pi_dir = os.path.join(home, ".pi")
     pattern = os.path.join(pi_dir, "sublime-session-*.json")
     session_files = glob.glob(pattern)
-    
+
     active_sessions = []
-    
+
     for f_path in session_files:
         filename = os.path.basename(f_path)
         try:
@@ -52,7 +54,7 @@ def get_active_sessions():
                 continue
         except Exception:
             continue
-            
+
         # Try loading the session JSON
         try:
             with open(f_path, "r", encoding="utf-8") as f:
@@ -67,7 +69,7 @@ def get_active_sessions():
             except Exception:
                 pass
             continue
-            
+
         # Verify socket connectivity
         is_active = False
         if socket_path and os.path.exists(socket_path):
@@ -79,14 +81,16 @@ def get_active_sessions():
                 is_active = True
             except Exception:
                 pass
-                
+
         if is_active:
-            active_sessions.append({
-                "uuid": uuid,
-                "cwd": cwd,
-                "socket_path": socket_path,
-                "last_activity": last_activity
-            })
+            active_sessions.append(
+                {
+                    "uuid": uuid,
+                    "cwd": cwd,
+                    "socket_path": socket_path,
+                    "last_activity": last_activity,
+                }
+            )
         else:
             # Socket is dead or stale, clean up both the json and socket files
             try:
@@ -98,7 +102,7 @@ def get_active_sessions():
                     os.remove(socket_path)
                 except Exception:
                     pass
-                    
+
     return active_sessions
 
 
@@ -106,9 +110,10 @@ class PiAskCommand(sublime_plugin.TextCommand):
     """
     Opens a multi-line input panel at the bottom of the screen to submit a prompt to Pi.
     """
+
     def run(self, edit):
         file_name = self.view.file_name()
-        
+
         if not file_name:
             sublime.status_message("Pi: Unsaved file, no path available.")
             return
@@ -123,7 +128,7 @@ class PiAskCommand(sublime_plugin.TextCommand):
 
         start_row, _ = self.view.rowcol(region.begin())
         end_row, _ = self.view.rowcol(region.end())
-        
+
         start_line = start_row + 1
         end_line = end_row + 1
 
@@ -138,12 +143,12 @@ class PiAskCommand(sublime_plugin.TextCommand):
             return
 
         # Create or retrieve the multi-line output panel
-        panel = window.create_output_panel('pi_ask_panel')
-        
+        panel = window.create_output_panel("pi_ask_panel")
+
         # Configure panel settings
         panel.set_scratch(True)
         panel.set_read_only(False)
-        
+
         settings = panel.settings()
         settings.set("word_wrap", True)
         settings.set("line_numbers", False)
@@ -165,9 +170,13 @@ class PiAskCommand(sublime_plugin.TextCommand):
         # Check if active session exists to warn early
         active_sessions = get_active_sessions()
         if not active_sessions:
-            sublime.status_message("Pi: Warning - No active Pi session detected. Run 'pi' in a terminal.")
+            sublime.status_message(
+                "Pi: Warning - No active Pi session detected. Run 'pi' in a terminal."
+            )
         else:
-            sublime.status_message("Pi: Type your prompt. Press Enter to submit, Shift+Enter for new line, Esc to cancel.")
+            sublime.status_message(
+                "Pi: Type your prompt. Press Enter to submit, Shift+Enter for new line, Esc to cancel."
+            )
 
     def is_visible(self):
         # Only show in the context menu if there is a real file behind the view
@@ -178,6 +187,7 @@ class PiSidebarAskCommand(sublime_plugin.WindowCommand):
     """
     Opens the Pi Ask panel with the right-clicked file/directory from the sidebar as context.
     """
+
     def run(self, paths=None, files=None):
         if not paths and files:
             paths = files
@@ -187,7 +197,7 @@ class PiSidebarAskCommand(sublime_plugin.WindowCommand):
 
         # Take the first selected path
         target_path = paths[0]
-        
+
         # Configure the panel context
         selected_text = ""
         reference = target_path
@@ -198,12 +208,12 @@ class PiSidebarAskCommand(sublime_plugin.WindowCommand):
             return
 
         # Create or retrieve the multi-line output panel
-        panel = window.create_output_panel('pi_ask_panel')
-        
+        panel = window.create_output_panel("pi_ask_panel")
+
         # Configure panel settings
         panel.set_scratch(True)
         panel.set_read_only(False)
-        
+
         settings = panel.settings()
         settings.set("word_wrap", True)
         settings.set("line_numbers", False)
@@ -225,16 +235,20 @@ class PiSidebarAskCommand(sublime_plugin.WindowCommand):
         # Check if active session exists to warn early
         active_sessions = get_active_sessions()
         if not active_sessions:
-            sublime.status_message("Pi: Warning - No active Pi session detected. Run 'pi' in a terminal.")
+            sublime.status_message(
+                "Pi: Warning - No active Pi session detected. Run 'pi' in a terminal."
+            )
         else:
-            sublime.status_message("Pi: Type your prompt. Press Enter to submit, Shift+Enter for new line, Esc to cancel.")
-
+            sublime.status_message(
+                "Pi: Type your prompt. Press Enter to submit, Shift+Enter for new line, Esc to cancel."
+            )
 
 
 class PiClearAndFocusCommand(sublime_plugin.TextCommand):
     """
     Clears the contents of the view and resets the selection to the beginning.
     """
+
     def run(self, edit):
         self.view.replace(edit, sublime.Region(0, self.view.size()), "")
         self.view.sel().clear()
@@ -246,6 +260,7 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
     Command bound to Enter / Ctrl+Enter in the Pi Ask panel.
     Sends the prompt to the matched Pi session over a Unix Domain Socket.
     """
+
     def run(self, edit):
         active_sessions = get_active_sessions()
         if not active_sessions:
@@ -265,19 +280,14 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
         if selected_text and selected_text.strip():
             # Get file extension for markdown syntax highlighting
             _, ext = os.path.splitext(file_name)
-            syntax = ext.lstrip('.').lower() if ext else ""
-            
+            syntax = ext.lstrip(".").lower() if ext else ""
+
             # Format with embedded code block
-            parts = [
-                f"Context: {reference}:",
-                f"```{syntax}",
-                selected_text,
-                "```"
-            ]
+            parts = [f"Context: {reference}:", f"```{syntax}", selected_text, "```"]
             if question:
                 parts.append("")
                 parts.append(question)
-                
+
             result = "\n".join(parts)
         else:
             # Fallback to pure reference format
@@ -293,7 +303,7 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
             file_dir = os.path.dirname(file_name) if file_name else ""
 
         target_session = None
-        
+
         # Rule 1: Global Fallback - If exactly one session exists, use it
         if len(active_sessions) == 1:
             target_session = active_sessions[0]
@@ -305,23 +315,27 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
                     cwd = s.get("cwd")
                     if cwd and is_ancestor_or_same(cwd, file_dir):
                         matching_sessions.append(s)
-            
+
             # Rule 2: Directory Match - If exactly one matches, use it
             if len(matching_sessions) == 1:
                 target_session = matching_sessions[0]
             # Rule 3: Recency Tie-Breaker
             elif len(matching_sessions) > 1:
                 # Multiple matches: pick most recently active match
-                matching_sessions.sort(key=lambda x: x.get("last_activity", 0), reverse=True)
+                matching_sessions.sort(
+                    key=lambda x: x.get("last_activity", 0), reverse=True
+                )
                 target_session = matching_sessions[0]
             else:
                 # No matches: pick most recently active globally
-                active_sessions.sort(key=lambda x: x.get("last_activity", 0), reverse=True)
+                active_sessions.sort(
+                    key=lambda x: x.get("last_activity", 0), reverse=True
+                )
                 target_session = active_sessions[0]
 
         success = False
         target_socket = target_session.get("socket_path") if target_session else None
-        
+
         if target_socket:
             try:
                 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -329,7 +343,7 @@ class PiSubmitAskCommand(sublime_plugin.TextCommand):
                 s.connect(target_socket)
                 s.sendall(result.encode("utf-8"))
                 s.shutdown(socket.SHUT_WR)  # Signal EOF to Node.js
-                
+
                 # Read acknowledgment handshake
                 response = s.recv(1024).decode("utf-8")
                 s.close()
@@ -355,6 +369,7 @@ class PiCancelAskCommand(sublime_plugin.TextCommand):
     Command bound to Escape in the Pi Ask panel.
     Hides the panel.
     """
+
     def run(self, edit):
         sublime.status_message("Pi: Cancelled.")
 
@@ -365,7 +380,10 @@ class PiCancelAskCommand(sublime_plugin.TextCommand):
 
 def plugin_loaded():
     # Only run on macOS
-    if os.name != "posix" or subprocess.check_output(["uname"]).decode("utf-8").strip() != "Darwin":
+    if (
+        os.name != "posix"
+        or subprocess.check_output(["uname"]).decode("utf-8").strip() != "Darwin"
+    ):
         return
 
     package_dir = os.path.dirname(__file__)
@@ -402,13 +420,14 @@ def plugin_loaded():
                 plistlib.dump(pl, fp)
 
         # Register with Launch Services
-        subprocess.run([
-            "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister",
-            "-f", app_path
-        ], check=True)
-
+        subprocess.run(
+            [
+                "/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister",
+                "-f",
+                app_path,
+            ],
+            check=True,
+        )
 
     except Exception as e:
         print("PiSublime: Failed to bootstrap SublHandler.app:", e)
-
-
