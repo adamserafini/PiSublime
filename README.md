@@ -5,7 +5,7 @@ A Sublime Text 4 plugin and `Pi` companion extension that enables:
 1. Sending selected context directly to your active `Pi` terminal session.
 1. Hyperlinking from `Pi` terminal sessions to the relevant code in Sublime Text 4 using [OSC 8 escape sequences](https://github.com/Alhadis/OSC8-Adoption/).
 
-So far, these are the *only* two integrations that I actually want between an editor and a coding harness.
+So far, these are the *only* two integrations that I actually want between an editor and a terminal-based coding harness.
 
 The idea for context injection is stolen from `aider`'s [watch files feature](https://aider.chat/docs/usage/watch.html). But in our case, instead of the harness watching the files, the editor watches `Pi` sessions and figures out which one the user is most likely working on.
 
@@ -38,6 +38,8 @@ pi install .
 
 ## Usage
 
+### Context Injection
+
 Select some text or put the cursor where you want to prompt. Select the `Pi: Ask` command from Command Palette. A text box for prompt will appear, `Shift+Enter` for new line, `Enter` to submit.
 
 If there is no running `Pi` session, user will be informed.
@@ -51,21 +53,11 @@ Otherwise, prompts you submit from Sublime Text will execute in a single `Pi` se
 
 ### Hyperlinking
 
-The project includes a `SublHandler.applescript` that implements a basic `subl` OS-level protocol handler, which associates with URLs like this:
-
-```text
-subl://open?url=file:///Users/adamserafini/Code/PiSublime/extensions/pisublime.ts&line=78
-```
-
-This protocol handler is registered to the OS, allowing you to click file paths directly inside your Pi terminal outputs and have them instantly open at the correct line in Sublime Text.
-
-## Features
-
-- `pi.py`: Contains the `Pi: Ask` command. Prompt Pi about selected text.
-- `Context.sublime-menu`: Adds the command to the right-click menu.
-- `Main.sublime-menu`: Adds the command to the Tools > Pi menu.
+If your terminal supports [OSC 8 escape sequences](https://github.com/Alhadis/OSC8-Adoption/), paths to files or lines of codes in a file in a `Pi` terminal session will be clickable hyperlinks and will open the file at the relevant line in ST4.
 
 ## How It Works
+
+### Context Injection
 
 The `Pi` extension starts a Unix Domain Socket server at `~/.pi/sublime-session-${uuid}.sock` for each terminal session and registers its workspace path (`cwd`) and activity time in a matching JSON file. When an agent starts responding to a prompt, the activity time is updated in this JSON file.
 
@@ -74,6 +66,14 @@ Before submitting a prompt, the Sublime plugin verifies active sessions by conne
 On exit, the `Pi` extension cleans up the socket and file.
 
 ### Hyperlinking
+
+The project includes a `SublHandler.applescript` implementing a basic `subl` OS-level protocol handler:
+
+```text
+subl://open?url=file:///Users/adamserafini/Code/PiSublime/extensions/pisublime.ts&line=78
+```
+
+This protocol handler gets compiled and registered to the OS when the Sublime plug-in is loaded, translating the URL to shell invocation of the `subl` CLI, which conveniently, accepts a `:line` suffix.
 
 The `pisublime` Pi extension intercepts assistant messages and tool execution results to find file paths (e.g., `src/main.ts:15` or `src/main.ts:78-91`). It converts these text patterns into interactive terminal links using OSC 8 escape sequences wrapping a `subl://open?url=file://...` protocol.
 
