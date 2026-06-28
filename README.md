@@ -2,9 +2,6 @@
   <h1>PiSublime</h1>
   <p><strong>Sublime Text 4 plugin and <code>Pi</code> companion extension</strong></p>
   <p>
-    🎯 Send selected context directly to terminal &nbsp;|&nbsp; 🔗 Hyperlink from terminal into your editor
-  </p>
-  <p>
     <a href="#installation"><b>Installation</b></a> &bull;
     <a href="#usage"><b>Usage</b></a> &bull;
     <a href="#how-it-works"><b>How It Works</b></a>
